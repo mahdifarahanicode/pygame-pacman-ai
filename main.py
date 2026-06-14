@@ -6,6 +6,7 @@ from collections import deque
 pygame.init()
 
 game_state = "playing"
+current_level = 1
 
 # ----------------- تنظیمات -----------------
 WIDTH, HEIGHT = 800, 600
@@ -14,6 +15,23 @@ tile = 40
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Pacman Game")
 clock = pygame.time.Clock()
+
+levels = {
+    1: {
+        "ghost_count": 1,
+        "ghost_ai": "random"
+    },
+
+    2: {
+        "ghost_count": 2,
+        "ghost_ai": "mixed"
+    },
+
+    3: {
+        "ghost_count": 3,
+        "ghost_ai": "bfs"
+    }
+}
 
 # ----------------- map -----------------
 map_data = [
@@ -290,7 +308,8 @@ def reset_game():
     global ghosts
     global score
     global game_state
-
+    global current_level
+    
     # اسپاون پلیر
     while True:
         player_x = random.randint(0, WIDTH - player_size)
@@ -300,7 +319,12 @@ def reset_game():
             break
 
     # اسپاون روح‌ها
-    ghosts = [spawn_ghost() for _ in range(3)]
+    ghosts = [
+        spawn_ghost()
+        for _ in range(
+            levels[current_level]["ghost_count"]
+        )
+    ]
 
     # جلوگیری از اسپاون روی پلیر
     player_rect = pygame.Rect(
@@ -422,8 +446,16 @@ while running:
             game_state = "lose"
 
     if len(dots) == 0:
-        print("YOU WIN")
-        game_state = "win"
+
+        if current_level < 3:
+
+            current_level += 1
+
+            reset_game()
+
+        else:
+
+            game_state = "win"
 
     text = font.render(f"Score: {score}", True, (255, 255, 255))
     screen.blit(text, (10, 10))
