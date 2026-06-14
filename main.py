@@ -8,9 +8,6 @@ pygame.init()
 game_state = "playing"
 current_level = 1
 lives = 3
-just_died = False
-invincible_timer = 0
-can_be_hit = True
 player_state = "alive"
 respawn_timer = 0
 
@@ -24,7 +21,7 @@ clock = pygame.time.Clock()
 
 levels = {
     1: {
-        "ghost_count": 1,
+        "ghost_count": 3,
         "ghost_ai": "random"
     },
 
@@ -100,21 +97,18 @@ def spawn_ghost():
         y = cell_y * tile + tile//2 - ghost_size//2
 
         return {
-            "cell_x": cell_x,
-            "cell_y": cell_y,
-            "x": x,
-            "y": y,
-            "path": [],
-            "moving": False,
-            "target_x": x,
-            "target_y": y
-        }
+        "cell_x": cell_x,
+        "cell_y": cell_y,
+        "x": x,
+        "y": y,
+        "path": [],
+        "moving": False,
+        "target_x": x,
+        "target_y": y,
+        "last_cell": None
+    }
 
 ghosts = []
-
-for _ in range(3):
-    g = spawn_ghost()
-    ghosts.append(g)
 
 # ----------------- movement -----------------
 
@@ -138,10 +132,6 @@ def handle_movement(x, y):
         return x, y
 
     return new_x, new_y
-
-
-def distance(x1, y1, x2, y2):
-    return ((x1 - x2) ** 2 + (y1 - y2) ** 2) ** 0.5
 
 def get_cell(x, y):
     return (
@@ -176,9 +166,34 @@ def get_neighbors(cell):
 
     return neighbors
 
-def random_neighbor(cell):
-    n = get_neighbors(cell)
-    return random.choice(n) if n else cell
+def random_neighbor(cell, last_cell):
+
+    neighbors = get_neighbors(cell)
+
+    filtered = [
+        n for n in neighbors
+        if n != last_cell
+    ]
+
+    if filtered:
+        return random.choice(filtered)
+
+    return random.choice(neighbors) if neighbors else cell
+
+def is_cell_occupied(cell, current_ghost):
+    
+    for g in ghosts:
+
+        if g is current_ghost:
+            continue
+
+        if (
+            g["cell_x"],
+            g["cell_y"]
+        ) == cell:
+            return True
+
+    return False
 
 def bfs(start, goal):
 
@@ -261,13 +276,64 @@ def move_ghosts():
             g["cell_y"]
         )
 
-        path = bfs(start, player_cell)
+        ai = levels[current_level]["ghost_ai"]
 
-        if not path:
-            continue
+        if ai == "random":
 
-        next_cell = path[0]
+            next_cell = random_neighbor(
+                start,
+                g["last_cell"]
+            )
 
+        elif ai == "mixed":
+
+            if random.random() < 0.25:
+
+                path = bfs(start, player_cell)
+
+                if not path:
+                    g["moving"] = False
+                    continue
+
+                next_cell = path[0]
+
+            else:
+                next_cell = random_neighbor(
+                    start,
+                    g["last_cell"]
+                )
+
+        elif ai == "bfs":
+
+            path = bfs(start, player_cell)
+
+            if not path:
+                g["moving"] = False
+                continue
+
+            next_cell = path[0]
+
+        if is_cell_occupied(
+            next_cell,
+            g
+        ):
+
+            alternatives = [
+                n
+                for n in get_neighbors(start)
+                if not is_cell_occupied(n, g)
+            ]
+
+            if alternatives:
+                next_cell = random.choice(alternatives)
+            else:
+                continue
+
+        g["last_cell"] = (
+            g["cell_x"],
+            g["cell_y"]
+        )
+        
         g["cell_x"] = next_cell[0]
         g["cell_y"] = next_cell[1]
 
