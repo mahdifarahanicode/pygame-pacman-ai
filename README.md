@@ -9,7 +9,8 @@ A Pacman-inspired game built with Python and Pygame.
 * Multiple ghost enemies
 * BFS pathfinding AI
 * Win and lose conditions
-* Multiple difficulty levels (planned)
+* Level system
+* Multiple difficulty levels
 
 ## Technologies
 
@@ -18,9 +19,8 @@ A Pacman-inspired game built with Python and Pygame.
 
 ## Future Improvements
 
-* Level system
 * Multiple maps
 * Advanced ghost behaviors
-* Power-ups
 * Main menu
 * Sound effects
+* Graphic improvements
