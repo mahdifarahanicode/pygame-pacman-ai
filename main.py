@@ -1,3 +1,4 @@
+import os
 import pygame
 import sys
 import random
@@ -5,11 +6,14 @@ from collections import deque
 
 pygame.init()
 
+SCORE_FILE = "assets/highscore.txt"
+
 game_state = "playing"
 current_level = 1
 lives = 3
 player_state = "alive"
 respawn_timer = 0
+level_complete_timer = 0
 
 # ----------------- تنظیمات -----------------
 WIDTH, HEIGHT = 800, 600
@@ -366,12 +370,49 @@ for y in range(rows):
 
 # ----------------- score -----------------
 score = 0
+
 font = pygame.font.SysFont(None, 36)
+big_font = pygame.font.SysFont(None, 60)
+
+def load_highscore():
+
+    if not os.path.exists(SCORE_FILE):
+
+        with open(SCORE_FILE, "w") as f:
+            f.write("0")
+
+        return 0
+
+    try:
+
+        with open(SCORE_FILE, "r") as f:
+            return int(f.read())
+
+    except:
+
+        with open(SCORE_FILE, "w") as f:
+            f.write("0")
+
+        return 0
+
+def save_highscore(score):
+
+    os.makedirs("assets", exist_ok=True)
+    
+    current_highscore = load_highscore()
+
+    if score > current_highscore:
+
+        with open(SCORE_FILE, "w") as f:
+            f.write(str(score))
+
+highscore = load_highscore()
 
 def reset_game(full_reset=False):
     global player_x, player_y, dots, ghosts
     global lives, current_level, game_state
-    global player_state, respawn_timer, score
+    global player_state, respawn_timer, score   
+    global level_complete_timer
 
     if full_reset:
         lives = 3
@@ -427,6 +468,63 @@ while running:
             if event.key == pygame.K_r:
                 reset_game(full_reset=True)
 
+    if game_state == "level_complete":
+
+        screen.fill((0, 0, 0))
+
+        title_text = font.render(
+            f"Level {current_level} Complete!",
+            True,
+            (0, 255, 0)
+        )
+
+        score_text = font.render(
+            f"Score: {score}",
+            True,
+            (255, 255, 255)
+        )
+
+        next_level_text = font.render(
+            f"Next Level: {current_level + 1}",
+            True,
+            (255, 255, 0)
+        )
+
+        screen.blit(
+            title_text,
+            (
+                WIDTH // 2 - title_text.get_width() // 2,
+                HEIGHT // 2 - 60
+            )
+        )
+
+        screen.blit(
+            score_text,
+            (
+                WIDTH // 2 - score_text.get_width() // 2,
+                HEIGHT // 2
+            )
+        )
+
+        screen.blit(
+            next_level_text,
+            (
+                WIDTH // 2 - next_level_text.get_width() // 2,
+                HEIGHT // 2 + 60
+            )
+        )
+
+        pygame.display.flip()
+
+        level_complete_timer -= 1
+
+        if level_complete_timer <= 0:
+            current_level += 1
+            reset_game()
+
+        clock.tick(60)
+        continue
+
     if game_state != "playing":
         screen.fill((0, 0, 0))
 
@@ -434,6 +532,40 @@ while running:
             "YOU WIN" if game_state == "win" else "YOU DIED",
             True,
             (0, 255, 0) if game_state == "win" else (255, 0, 0)
+        )
+
+        final_score_text = font.render(
+            f"Final Score: {score}",
+            True,
+            (255, 255, 255)
+        )
+
+        screen.blit(
+            final_score_text,
+            (
+                WIDTH // 2 - final_score_text.get_width() // 2,
+                HEIGHT // 2 - 20
+            )
+        )
+
+        final_score_text = font.render(
+            f"Final Score: {score}",
+            True,
+            (255, 255, 255)
+        )
+
+        highscore_text = font.render(
+            f"High Score: {highscore}",
+            True,
+            (255, 255, 255)
+        )
+
+        screen.blit(
+            highscore_text,
+            (
+                WIDTH // 2 - highscore_text.get_width() // 2,
+                HEIGHT // 2 + 40
+            )
         )
 
         screen.blit(
@@ -449,7 +581,7 @@ while running:
 
         screen.blit(
             restart_text,
-            (WIDTH // 2 - 100, HEIGHT // 2 + 30)
+            (WIDTH // 2 - 100, HEIGHT // 2 + 100)
         )
 
         pygame.display.flip()
@@ -490,8 +622,13 @@ while running:
                 lives -= 1
 
                 if lives <= 0:
+
+                    save_highscore(score)
+                    highscore = load_highscore()
+
                     game_state = "lose"
                     player_state = "dead"
+                
                 else:
                     player_state = "respawning"
                     respawn_timer = 60
@@ -502,11 +639,13 @@ while running:
 
         if current_level < 3:
 
-            current_level += 1
-
-            reset_game()
+            game_state = "level_complete"
+            level_complete_timer = 180   # 3 ثانیه در 60 FPS
 
         else:
+
+            save_highscore(score)
+            highscore = load_highscore()
 
             game_state = "win"
 
