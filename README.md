@@ -1,4 +1,4 @@
-# Pygame Pacman AI
+# Pygame Pacman
 
 A Pacman-inspired game built with Python and Pygame.
 
