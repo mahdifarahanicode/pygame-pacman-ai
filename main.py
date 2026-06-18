@@ -2,7 +2,6 @@ import os
 import pygame
 import sys
 import random
-
 from collections import deque
 from assets.maps import maps
 from core.config import *
@@ -14,19 +13,12 @@ import game.pathfinding as pathfinding
 import screens.menu as menu
 from game.ghosts import spawn_ghost, move_ghosts
 import core.config as config
-
 from core.levels import *
 from core.score import *
-from game.map_loader import *
-from screens.gameover import *
-from screens.level_complete import *
 
 pygame.init()
 pygame.mixer.init()
-
 sounds.init_sounds()
-
-#SCORE_FILE = "assets/highscore.txt"
 
 font = pygame.font.SysFont(None, 36)
 big_font = pygame.font.SysFont(None, 60)
@@ -36,15 +28,8 @@ pygame.display.set_caption("Pacman Game")
 clock = pygame.time.Clock()
 
 state.map_data = maps[config.current_level - 1]
-
-state.current_level = current_level
-
-# ----------------- map -----------------
-
 state.rows = len(state.map_data)
 state.cols = len(state.map_data[0])
-
-# ----------------- walls -----------------
 state.walls.clear()
 
 for y, row in enumerate(state.map_data):
@@ -54,7 +39,6 @@ for y, row in enumerate(state.map_data):
             state.walls.append(
                 pygame.Rect(x * tile, y * tile, tile, tile)
             )
-# ----------------- player -----------------
 
 def is_valid_spawn(x, y):
     rect = pygame.Rect(x, y, player_size, player_size)
@@ -70,9 +54,6 @@ while True:
 state.player_x = player_x
 state.player_y = player_y
 
-# ----------------- ghosts -----------------
-
-
 state.ghosts = []
 
 for _ in range(levels[current_level]["ghost_count"]):
@@ -80,8 +61,6 @@ for _ in range(levels[current_level]["ghost_count"]):
 
     if g:
         state.ghosts.append(g)
-
-# ----------------- movement -----------------
 
 def handle_movement(x, y):
     keys = pygame.key.get_pressed()
@@ -104,13 +83,6 @@ def handle_movement(x, y):
 
     return new_x, new_y
 
-def get_cell(x, y):
-    return (
-        int(x // tile),
-        int(y // tile)
-    )
-
-# ----------------- dots -----------------
 state.dots.clear()
 
 for y in range(state.rows):
@@ -124,12 +96,8 @@ for y in range(state.rows):
                 )
             )
 
-# ----------------- score -----------------
-
 highscore = load_highscore()
 
-
-# ----------------- game loop -----------------
 running = True
 
 while running:
@@ -325,12 +293,6 @@ while running:
                 WIDTH // 2 - final_score_text.get_width() // 2,
                 HEIGHT // 2 - 20
             )
-        )
-
-        final_score_text = font.render(
-            f"Final Score: {score}",
-            True,
-            (255, 255, 255)
         )
 
         highscore_text = font.render(
